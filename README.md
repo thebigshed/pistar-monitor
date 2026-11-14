@@ -1,5 +1,7 @@
 # Pi-Star Monitor
 
+[![Build](https://github.com/thebigshed/pistar-monitor/actions/workflows/build.yml/badge.svg)](https://github.com/thebigshed/pistar-monitor/actions/workflows/build.yml)
+
 A desktop app (Qt 6, C++) that turns a [Pi-Star](https://www.pistar.uk/) hotspot into a
 listening post and a network radio: it decodes and plays the digital voice traffic passing
 through the hotspot, shows DAPNET pages, records calls, changes reflector links and lets you
