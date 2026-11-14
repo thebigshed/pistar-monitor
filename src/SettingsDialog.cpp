@@ -93,8 +93,8 @@ SettingsDialog::SettingsDialog(const Settings &s, QWidget *parent) : QDialog(par
     f->addRow("DMR colour code", cc_ = spin(0, 15, s.station.colourCode));
     f->addRow("D-Star module", dstarModule_ = line(s.station.dstarModule));
     dstarModule_->setMaxLength(1);
-    f->addRow(note("Used to label your own calls (the NXDN ID is not in Pi-Star's NXDN.csv) and as the "
-                   "identity of test calls. The P25 source ID is the DMR ID."));
+    f->addRow(note("Your identity for test calls and transmitting, and for labelling your own calls (useful "
+                   "when your NXDN ID is not in Pi-Star's NXDN.csv). The P25 source ID is the DMR ID."));
 
     // ---- Pager
     f = addPage("Pager");
@@ -258,6 +258,7 @@ SettingsDialog::SettingsDialog(const Settings &s, QWidget *parent) : QDialog(par
     auto *fileRow = new QHBoxLayout;
     auto *where = new QLabel(QString("Saved in <code>%1</code>").arg(Settings::path().toHtmlEscaped()));
     where->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    where->setWordWrap(true);   // long paths must not stretch the dialog
     auto *open = new QPushButton("Open folder");
     connect(open, &QPushButton::clicked, this, [] {
         QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(Settings::path()).absolutePath()));

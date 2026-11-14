@@ -47,8 +47,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     cfg_ = Settings::load();
     const QStringList args = QApplication::arguments();
     // Test aids must not change the saved settings.
+    demo_ = args.contains("--demo");
     persist_ = !(args.contains("--test-call") || args.contains("--echo-call") || args.contains("--replay") ||
-                 args.contains("--change-link") || args.contains("--mic-test") || args.contains("--ptt-test"));
+                 args.contains("--change-link") || args.contains("--mic-test") || args.contains("--ptt-test") || demo_);
+    if (demo_) {   // placeholder identity for screenshots
+        cfg_.station.callsign = "N0CALL";
+        cfg_.station.dmrId = 1234567;
+        cfg_.station.repeaterId = 123456701;
+        cfg_.station.nxdnId = 1234;
+        cfg_.pager.myRics = "1234567";
+        cfg_.testCall.echo = false;
+        cfg_.audio.backend = "alsa";   // play into ALSA's silent null device
+        cfg_.audio.device = "null";
+    }
     pttTest_ = args.contains("--ptt-test");
     for (int i = 1; i + 1 < args.size(); ++i) {
         if (args[i] == "--host") cfg_.connection.host = args[i + 1];
@@ -68,8 +79,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     connect(&uiTimer_, &QTimer::timeout, this, &MainWindow::tick);
     uiTimer_.start(100);
 
-    loadIds();
-    loadNxdnIds();
+    if (!demo_) {
+        loadIds();
+        loadNxdnIds();
+    }
     if (args.contains("--mic-test")) {   // test aid: microphone levels for 3 s, nothing sent or stored
         auto *levels = new QStringList;
         auto mic = std::make_shared<AudioIn>();
@@ -86,6 +99,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             fflush(stdout);
             QApplication::quit();
         });
+    }
+    if (demo_) {   // --demo [pager]: sample data for screenshots; nothing is connected or sent
+        logFile_->close();
+        dstarFile_->close();
+        genFile_->close();
+        pageFile_->close();
+        recDir_ = QDir::tempPath() + "/pistar-dmr-demo-recordings";
+        ids_.insert(1234567, {"N0CALL", "Demo"});
+        nameByCall_.insert("N0CALL", "Demo");
+        nxdnIds_.insert(1234, {"N0CALL", "Demo"});
+        setStatus("Demo data (not connected)", "#1a73e8");
+        QJsonObject modes;
+        for (const char *m : {"D-Star", "DMR", "YSF", "P25", "NXDN", "M17", "POCSAG"})
+            modes[m] = QJsonObject{{"mode", true}, {"network", true}};
+        modes["FM"] = QJsonObject{{"mode", false}, {"network", false}};
+        handleModes(QJsonDocument(modes).toJson(QJsonDocument::Compact));
+        handleEndpoints(QJsonDocument(QJsonObject{{"D-Star", "REF001 C"}, {"DMR", "BM 2341"}, {"YSF", "US-PI-STAR-MULTI"},
+                                                  {"P25", "TG 31672"}, {"NXDN", "TG 31672"}, {"M17", "M17-672 E"},
+                                                  {"POCSAG", "DAPNET"}}).toJson(QJsonDocument::Compact));
+        const QString day = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd");
+        const QString t1 = QDateTime::currentDateTimeUtc().addSecs(-1500).toString("HH:mm:ss");
+        const QString t2 = QDateTime::currentDateTimeUtc().addSecs(-300).toString("HH:mm:ss");
+        handlePage(QString("M: %1 %2.000 Sending message in slot 3 to 0000208, type 6, func Alphanumeric: \"XTIME=1200141126\"").arg(day, t1).toUtf8());
+        handlePage(QString("M: %1 %2.000 Sending message in slot 4 to 1234567, type 6, func Alphanumeric: \"Club net tonight 19:30 on TG 2350\"").arg(day, t1).toUtf8());
+        handlePage(QString("M: %1 %2.000 Sending message in slot 8 to 1234567, type 6, func Alphanumeric: \"Welcome to the demo of Pi-Star Monitor\"").arg(day, t2).toUtf8());
+        if (args.contains("pager")) tabs_->setCurrentIndex(1);
+        const QStringList order = {"DMR", "YSF", "P25", "NXDN", "M17", "D-Star"};
+        for (int i = 0; i < order.size(); ++i)
+            QTimer::singleShot(800 + i * 6500, this, [this, m = order[i]] { startTestCall(m); });
     }
     const int pt = args.indexOf("--ptt-test");   // test aid: PTT path with the test phrase instead of the mic
     if (pt > 0 && pt + 1 < args.size()) {
@@ -162,7 +204,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         recDir_ = QDir::tempPath() + "/pistar-dmr-test-recordings";
         startReplay(args[r + 1]);
     }
-    else
+    else if (!demo_)
         startCapture();
 }
 
@@ -869,7 +911,8 @@ void MainWindow::updateTxTarget()
     TxTarget t;
     QString err;
     QString text;
-    if (!cfg_.stationReady(&err)) text = QString("<span style='color: #d93025'>%1</span>").arg(err.toHtmlEscaped());
+    if (demo_) txTarget(t, err), text = "→ " + endpoints_.value(t.mode).toString().toHtmlEscaped(), err.clear();
+    else if (!cfg_.stationReady(&err)) text = QString("<span style='color: #d93025'>%1</span>").arg(err.toHtmlEscaped());
     else if (!txSession_ || !txReady_) text = "<span style='color: gray'>connecting…</span>";
     else if (!txTarget(t, err)) text = QString("<span style='color: #d93025'>%1</span>").arg(err.toHtmlEscaped());
     else if (dmr) text = QString("→ %1 on BrandMeister").arg(t.privateCall ? QString("private %1").arg(t.dst) : QString("TG %1").arg(t.dst));

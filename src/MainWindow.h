@@ -167,6 +167,7 @@ private:
     // settings (settings.json); persist_ is false for test runs so they never write it
     Settings cfg_;
     bool persist_ = true;
+    bool demo_ = false;   // --demo: sample data for screenshots
 
     // processes
     QProcess *ssh_ = nullptr;

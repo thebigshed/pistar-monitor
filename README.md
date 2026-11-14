@@ -7,6 +7,16 @@ transmit from a PC headset.
 
 It talks to the hotspot over SSH. It does not need any changes to Pi-Star.
 
+## Screenshots
+
+![Main window: a D-Star call in progress, what each mode is linked to, and the call log](docs/screenshots/main.png)
+
+| Pager | Changing a link | Settings |
+|---|---|---|
+| ![DAPNET pages to your own RICs](docs/screenshots/pager.png) | ![Picking a D-Star reflector](docs/screenshots/link.png) | ![Station settings](docs/screenshots/settings.png) |
+
+*Screenshots are from `--demo` mode, which uses the placeholder callsign N0CALL and sample data.*
+
 ## Features
 
 - **Listen** to DMR, D-Star, YSF (DN), P25, NXDN and M17 calls passing through the hotspot,
@@ -75,7 +85,8 @@ IDs. The app refuses to transmit until the Station settings are filled in.
 
 `--replay capture.bin`, `--test-call MODE` (local only), `--echo-call MODE`,
 `--ptt-test MODE` (synthesised speech to the DMR parrot), `--mic-test`,
-`--settings [tab]`, `--change-link MODE`. Test runs never write the settings file.
+`--settings [tab]`, `--change-link MODE`, `--demo [pager]` (sample data with a placeholder
+identity, for screenshots; connects to nothing). Test runs never write the settings file.
 
 ## Licence
 

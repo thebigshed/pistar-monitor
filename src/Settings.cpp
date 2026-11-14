@@ -45,7 +45,9 @@ QString Settings::testSpokenText() const
 
 QString Settings::testTextMessage() const
 {
-    return testCall.textMessage.isEmpty() ? (station.callsign + " Test test test").left(20) : testCall.textMessage;
+    if (!testCall.textMessage.isEmpty()) return testCall.textMessage;
+    const QString full = station.callsign + " Test test test";   // D-Star slow data holds 20 characters
+    return full.size() <= 20 ? full : (station.callsign + " Test test").left(20);
 }
 
 // ---------------------------------------------------------------- JSON helpers
