@@ -35,19 +35,21 @@ It talks to the hotspot over SSH. It does not need any changes to Pi-Star.
 
 ## Building
 
+The packages needed to build and run it are listed in [`requirements.txt`](requirements.txt)
+(Debian / Ubuntu names, with Fedora and Arch equivalents in the comments).
+
 Debian / Ubuntu:
 
 ```sh
-sudo apt install build-essential cmake qt6-base-dev libcodec2-dev
+sed 's/#.*//' requirements.txt | xargs sudo apt install -y
 cmake -S . -B build
 cmake --build build -j
 ./build/pistar-dmr
 ```
 
-`libcodec2-dev` is optional (without it M17 calls are shown but not played).
-At run time the app uses, if present: `libpulse-simple` or `libasound` (audio),
-`libespeak-ng` (speech for test calls) and `pw-dump` (device lists). These are normally
-already installed on a desktop.
+`libcodec2-dev` is optional (without it M17 calls are shown but not played). The run-time
+libraries (PulseAudio or ALSA, eSpeak NG, PipeWire's `pw-dump`) are loaded when the app starts
+and are normally already installed on a desktop.
 
 ## Setting up the hotspot
 

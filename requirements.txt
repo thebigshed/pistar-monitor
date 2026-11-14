@@ -1,0 +1,23 @@
+# Linux packages needed to build and run Pi-Star Monitor.
+# Package names are for Debian / Ubuntu (checked on Ubuntu 26.04). Install them all with:
+#
+#   sed 's/#.*//' requirements.txt | xargs sudo apt install -y
+#
+# Nothing needs installing on the Pi-Star itself.
+
+# ---- build ----------------------------------------------------------------
+build-essential      # C/C++ compiler (g++), make, libc headers
+cmake                # build system (3.16 or newer)
+qt6-base-dev         # Qt 6 Widgets (brings in the OpenGL headers Qt needs)
+libcodec2-dev        # Codec2, for M17 audio (optional: without it M17 calls are shown but silent)
+
+# ---- run time (loaded by the app when it starts; usually already on a desktop) ----
+libpulse0            # PulseAudio / PipeWire audio output and microphone (libpulse-simple)
+libasound2t64        # ALSA audio, used if PulseAudio is not available (Debian 12 / Ubuntu 22.04: libasound2)
+libespeak-ng1        # eSpeak NG speech, for test calls and the speaker test
+pipewire-bin         # pw-dump, to list audio devices in Settings
+openssh-client       # ssh, to talk to the Pi-Star
+
+# ---- other distributions ---------------------------------------------------
+# Fedora:  gcc-c++ make cmake qt6-qtbase-devel codec2-devel pulseaudio-libs alsa-lib espeak-ng pipewire-utils openssh-clients
+# Arch:    base-devel cmake qt6-base codec2 libpulse alsa-lib espeak-ng pipewire openssh
