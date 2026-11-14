@@ -1,0 +1,17 @@
+# build output
+build/
+__pycache__/
+*.pyc
+
+# not used by the build (the app links the system Codec2 library)
+third_party/codec2/
+
+# mbelib's own build and packaging files
+third_party/mbelib/build/
+third_party/mbelib/debian/
+
+# captures, recordings and local test files
+*.bin
+*.wav
+*.xwd
+third_party/mbelib/test/
