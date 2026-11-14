@@ -279,6 +279,8 @@ void MainWindow::startTestCall(const QString &mode)
         // Let the call end (terminator already sent; timeout as a fallback) before clearing the flag.
         QTimer::singleShot(2000, this, [this] {
             testFeeding_ = false;
+            // --test-call: the call has ended and been recorded, so finish (used by CI).
+            if (QApplication::arguments().contains("--test-call")) QTimer::singleShot(300, qApp, &QApplication::quit);
             refreshTestModes();
         });
     });
@@ -1875,7 +1877,7 @@ void MainWindow::handlePage(const QByteArray &logLine)
     const auto m = re.match(QString::fromUtf8(logLine));
     if (!m.hasMatch()) return;
     QDateTime when = QDateTime::fromString(m.captured(1), "yyyy-MM-dd HH:mm:ss");
-    when.setTimeZone(QTimeZone::UTC);           // Pi-Star logs in UTC
+    when.setTimeZone(QTimeZone::utc());         // Pi-Star logs in UTC
     when = when.toLocalTime();
     const uint32_t ric = m.captured(2).toUInt();
     const QString func = m.captured(3);

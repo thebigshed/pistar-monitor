@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Ubuntu 24.04 (${{ matrix.codec2 && 'with' || 'without' }} Codec2)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        codec2: [true, false]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packages from requirements.txt
+        run: |
+          pkgs=$(sed 's/#.*//' requirements.txt | xargs)
+          if [ "${{ matrix.codec2 }}" = "false" ]; then
+            pkgs=$(echo "$pkgs" | sed 's/libcodec2-dev//')
+          fi
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $pkgs
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j "$(nproc)"
+
+      - name: Smoke test - a local test call in each mode
+        # Each test call is spoken by eSpeak NG, encoded, packed into the mode's network
+        # packets and decoded again by the app; it must leave a recording. Nothing is sent
+        # anywhere, and with no sound card the app just reports that audio is unavailable.
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          modes="DMR D-Star YSF P25 NXDN"
+          if [ "${{ matrix.codec2 }}" = "true" ]; then modes="$modes M17"; fi
+          failed=0
+          for m in $modes; do
+            rm -rf /tmp/pistar-dmr-test-recordings
+            timeout 25 ./build/pistar-dmr --test-call "$m" > /dev/null 2>&1 || true
+            if ls /tmp/pistar-dmr-test-recordings/*.wav > /dev/null 2>&1; then
+              f=$(ls /tmp/pistar-dmr-test-recordings/*.wav)
+              echo "$m: OK ($(stat -c %s "$f") bytes)"
+            else
+              echo "$m: no recording"
+              failed=1
+            fi
+          done
+          exit $failed
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: pistar-dmr-ubuntu-24.04${{ matrix.codec2 && '' || '-no-codec2' }}
+          path: build/pistar-dmr
