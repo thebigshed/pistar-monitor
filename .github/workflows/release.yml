@@ -1,0 +1,73 @@
+name: Release
+
+# Push a version tag to publish a release:
+#   git tag v0.2.0 && git push origin v0.2.0
+# Or run it by hand (Actions → Release → Run workflow) with "publish" off for a dry run that
+# only builds and packages, leaving the archives as workflow artifacts.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version tag (e.g. v0.2.0)
+        required: true
+      publish:
+        description: Publish the GitHub release (off = dry run, packages only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+      PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          for k in with without; do
+            d="pistar-monitor-$VERSION-linux-x86_64-$k-codec2"
+            mkdir -p "pkg/$d"
+            cp "artifacts/pistar-dmr-ubuntu-24.04-$k-codec2/pistar-dmr" "pkg/$d/"
+            chmod +x "pkg/$d/pistar-dmr"
+            cp README.md LICENSE requirements.txt "pkg/$d/"
+            tar -C pkg -czf "dist/$d.tar.gz" "$d"
+          done
+          (cd dist && sha256sum *.tar.gz > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          sed "s/VERSION/$VERSION/g" .github/release-notes.md > notes.md
+
+      - name: Keep the packages (dry run)
+        if: env.PUBLISH != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ env.VERSION }}
+          path: |
+            dist/*
+            notes.md
+
+      - name: Publish the release
+        if: env.PUBLISH == 'true'
+        run: |
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            gh release upload "$VERSION" dist/* --clobber     # re-run: replace the files
+          else
+            gh release create "$VERSION" dist/* --title "Pi-Star Monitor $VERSION" \
+              --notes-file notes.md --generate-notes --verify-tag
+          fi
