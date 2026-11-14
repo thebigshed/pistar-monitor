@@ -92,6 +92,19 @@ IDs. The app refuses to transmit until the Station settings are filled in.
 `--settings [tab]`, `--change-link MODE`, `--demo [pager]` (sample data with a placeholder
 identity, for screenshots; connects to nothing). Test runs never write the settings file.
 
+## Releasing
+
+Push a version tag and GitHub Actions builds, tests, packages and publishes the release
+(binaries, checksums and notes from `.github/release-notes.md`):
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+To try it without publishing, run **Actions → Release → Run workflow** with *publish* off; the
+packages are kept as a workflow artifact.
+
 ## Licence
 
 GPL-3.0-or-later (see `LICENSE`), because it includes GPL code:
