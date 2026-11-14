@@ -16,6 +16,7 @@
 #include "AudioOut.h"
 #include "AudioIn.h"
 #include "VoiceEncoder.h"
+#include "ElideLabel.h"
 #include <memory>
 #include <functional>
 
@@ -216,13 +217,15 @@ private:
 
     // ui
     QFrame *callPanel_ = nullptr;
-    QLabel *statusDot_ = nullptr, *statusText_ = nullptr;
+    QLabel *statusDot_ = nullptr;
+    ElideLabel *statusText_ = nullptr;
     QHash<QString, QPair<bool, bool>> modes_;   // mode -> (mode enabled, network enabled), from /etc/mmdvmhost
     bool modesKnown_ = false;                   // false until the hotspot has reported (e.g. offline replay)
     QJsonObject endpoints_;                     // mode -> linked reflector/TG/master ("" = not linked)
     QLabel *endpointsLabel_ = nullptr;
     QHash<QString, QPair<qint64, QJsonObject>> linkLists_;   // mode -> (fetched at, list), cached briefly
-    QLabel *callTitle_ = nullptr, *callSub_ = nullptr, *callTime_ = nullptr;
+    ElideLabel *callTitle_ = nullptr, *callSub_ = nullptr;   // never widen the window
+    QLabel *callTime_ = nullptr;
     QProgressBar *levelBar_ = nullptr;
     QSlider *volume_ = nullptr;
     QLabel *volumeLabel_ = nullptr;

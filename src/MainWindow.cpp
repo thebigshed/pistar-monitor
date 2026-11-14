@@ -303,13 +303,14 @@ void MainWindow::buildUi()
     // connection status
     auto *statusRow = new QHBoxLayout;
     statusDot_ = new QLabel("●");
-    statusText_ = new QLabel;
+    statusText_ = new ElideLabel;
     statusRow->addWidget(statusDot_);
     statusRow->addWidget(statusText_, 1);
 
     root->addLayout(statusRow);
     // What each enabled mode is linked to (reflector / talkgroup / master)
     endpointsLabel_ = new QLabel;
+    endpointsLabel_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);   // wraps; never widens the window
     endpointsLabel_->setWordWrap(true);
     endpointsLabel_->setTextFormat(Qt::RichText);
     endpointsLabel_->setTextInteractionFlags(Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
@@ -324,10 +325,10 @@ void MainWindow::buildUi()
     callPanel_->setMinimumHeight(110);
     auto *cp = new QGridLayout(callPanel_);
     cp->setContentsMargins(14, 10, 14, 10);
-    callTitle_ = new QLabel;
+    callTitle_ = new ElideLabel;
     QFont tf = callTitle_->font(); tf.setPointSizeF(tf.pointSizeF() * 2.0); tf.setBold(true);
     callTitle_->setFont(tf);
-    callSub_ = new QLabel;
+    callSub_ = new ElideLabel;
     QFont sf = callSub_->font(); sf.setPointSizeF(sf.pointSizeF() * 1.2);
     callSub_->setFont(sf);
     callTime_ = new QLabel;
@@ -380,6 +381,7 @@ void MainWindow::buildUi()
     auto *pb = new QHBoxLayout(pageBanner_);
     pb->setContentsMargins(12, 6, 6, 6);
     pageBannerText_ = new QLabel;
+    pageBannerText_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     pageBannerText_->setWordWrap(true);
     pageBannerText_->setTextInteractionFlags(Qt::TextSelectableByMouse);
     auto *dismiss = new QPushButton("✕");
@@ -408,7 +410,8 @@ void MainWindow::buildUi()
     log_->setSelectionBehavior(QAbstractItemView::SelectRows);
     log_->setAlternatingRowColors(true);
     log_->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    log_->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Stretch);
+    log_->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Stretch);   // Name and Target share the spare width
+    log_->horizontalHeader()->setSectionResizeMode(5, QHeaderView::Stretch);
 
     // pager tab
     auto *pagerTab = new QWidget;
@@ -465,6 +468,7 @@ void MainWindow::buildUi()
     txMode_ = new QComboBox;
     txMode_->setToolTip("Mode to transmit in (modes whose network is enabled in Pi-Star)");
     txTargetLabel_ = new QLabel;
+    txTargetLabel_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     txTargetLabel_->setMinimumWidth(120);
     txTg_ = new QSpinBox;
     txTg_->setRange(1, 16777215);
@@ -1995,7 +1999,7 @@ void MainWindow::tick()
         panelStyle_ = css;
         callPanel_->setStyleSheet(css);
     };
-    auto setLabel = [](QLabel *l, const QString &text) {
+    auto setLabel = [](auto *l, const QString &text) {   // ElideLabel or QLabel: calls its own setText
         if (l->text() != text) l->setText(text);
     };
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
